@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heading: 'Barlow Condensed', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-sans: 'Be Vietnam Pro', sans-serif;
+
+  --color-fpt-blue: #0066B3;
+  --color-fpt-blue-dark: #004882;
+  --color-fpt-orange: #F37021;
+  --color-fpt-orange-hover: #ff7e33;
+  --color-fpt-green: #00A651;
+  --color-fpt-cyan: #22E4FF;
+  --color-fpt-bg: #05070D;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  background-color: #05070D;
+  color: #FFFFFF;
+}
+
+.font-heading {
+  font-family: 'Barlow Condensed', sans-serif;
+  line-height: 1.1;
+}
+
+.font-mono {
+  font-family: 'Space Mono', monospace;
+}
+
+.font-sans {
+  font-family: 'Be Vietnam Pro', sans-serif;
+}
+
+/* Futuristic background grid */
+.tech-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(34, 228, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(34, 228, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.tech-grid-subtle {
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #05070D;
+}
+::-webkit-scrollbar-thumb {
+  background: #0066B3;
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #22E4FF;
+}
+
+/* Scanline / tech line effect */
+.tech-scanlines {
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  ), linear-gradient(
+    90deg,
+    rgba(255, 0, 0, 0.03),
+    rgba(0, 255, 0, 0.01),
+    rgba(0, 0, 255, 0.03)
+  );
+  background-size: 100% 3px, 6px 100%;
+}
