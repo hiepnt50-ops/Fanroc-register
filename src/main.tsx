@@ -1,5 +1,2 @@
-import {createRoot} from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
-
-createRoot(document.getElementById('root')!).render(<App />);
+// Trang web chính chạy hoàn toàn từ /index.html (Single-file HTML/CSS/JS inline).
+export {};

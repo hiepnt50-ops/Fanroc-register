@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { FptLogo } from './FptLogo.tsx';
-import { Menu, X, ArrowUpRight, Flame } from 'lucide-react';
+import { BOARD_TABS } from '../constants.ts';
+import { BoardSlug, BoardTabId } from '../types.ts';
+import { Menu, X, ArrowUpRight, Flame, ChevronDown } from 'lucide-react';
 
 interface NavbarProps {
   onOpenRegister: () => void;
+  onNavigateSection: (sectionId: string) => void;
+  onNavigateBoard: (slug: BoardSlug, tab?: BoardTabId) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onOpenRegister,
+  onNavigateSection,
+  onNavigateBoard,
+}) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<BoardSlug | null>(null);
+  const [mobileExpandedBoard, setMobileExpandedBoard] = useState<BoardSlug | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,17 +31,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
   const navLinks = [
     { label: 'Trang chủ', href: '#hero' },
     { label: 'Hình ảnh', href: '#media' },
-    { label: 'Hành trình', href: '#timeline' },
+    { label: 'Hành trình', href: '#lo-trinh' },
     { label: 'Bảng đấu', href: '#boards' },
+    { label: 'Giải thưởng', href: '#giai-thuong' },
   ];
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     setMobileMenuOpen(false);
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    setOpenDropdown(null);
+    onNavigateSection(href);
+  };
+
+  const handleBoardDropdownSelect = (slug: BoardSlug, tab: BoardTabId = 'gioi-thieu') => {
+    setOpenDropdown(null);
+    setMobileMenuOpen(false);
+    onNavigateBoard(slug, tab);
   };
 
   return (
@@ -62,18 +77,87 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
         </a>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-8" aria-label="Menu chính">
+        <nav className="hidden lg:flex items-center gap-6" aria-label="Menu chính">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
               onClick={(e) => handleLinkClick(e, link.href)}
-              className="text-sm font-medium tracking-wide text-neutral-300 hover:text-white relative py-1 transition-colors hover:text-[#22E4FF] focus:outline-none focus:text-[#22E4FF]"
+              className="text-sm font-medium tracking-wide text-neutral-300 hover:text-[#22E4FF] relative py-1 transition-colors focus:outline-none focus:text-[#22E4FF]"
             >
               {link.label}
-              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-[#22E4FF] transition-all duration-200 hover:w-full" />
             </a>
           ))}
+
+          {/* Robotics Dropdown Menu */}
+          <div
+            className="relative"
+            onMouseEnter={() => setOpenDropdown('robotics')}
+            onMouseLeave={() => setOpenDropdown(null)}
+          >
+            <button
+              type="button"
+              onClick={() => handleBoardDropdownSelect('robotics', 'gioi-thieu')}
+              className="inline-flex items-center gap-1 text-sm font-semibold tracking-wide text-[#22E4FF] hover:text-white py-1 transition-colors cursor-pointer"
+              aria-haspopup="true"
+              aria-expanded={openDropdown === 'robotics'}
+            >
+              <span>Robotics</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+
+            {openDropdown === 'robotics' && (
+              <div className="absolute left-0 top-full pt-2 w-56 z-50">
+                <div className="bg-[#0A193C] border border-cyan-400/35 rounded-xl shadow-2xl py-2 overflow-hidden">
+                  {BOARD_TABS.robotics.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handleBoardDropdownSelect('robotics', tab.id)}
+                      className="w-full text-left px-4 py-2.5 text-xs font-sans text-slate-200 hover:bg-cyan-500/20 hover:text-[#22E4FF] transition-colors cursor-pointer block"
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Drone Dropdown Menu */}
+          <div
+            className="relative"
+            onMouseEnter={() => setOpenDropdown('drone')}
+            onMouseLeave={() => setOpenDropdown(null)}
+          >
+            <button
+              type="button"
+              onClick={() => handleBoardDropdownSelect('drone', 'gioi-thieu')}
+              className="inline-flex items-center gap-1 text-sm font-semibold tracking-wide text-[#F37021] hover:text-orange-300 py-1 transition-colors cursor-pointer"
+              aria-haspopup="true"
+              aria-expanded={openDropdown === 'drone'}
+            >
+              <span>Drone</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+
+            {openDropdown === 'drone' && (
+              <div className="absolute left-0 top-full pt-2 w-56 z-50">
+                <div className="bg-[#0A193C] border border-orange-400/35 rounded-xl shadow-2xl py-2 overflow-hidden">
+                  {BOARD_TABS.drone.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handleBoardDropdownSelect('drone', tab.id)}
+                      className="w-full text-left px-4 py-2.5 text-xs font-sans text-slate-200 hover:bg-orange-500/20 hover:text-orange-300 transition-colors cursor-pointer block"
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Right Action: Register CTA Button */}
@@ -93,7 +177,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-neutral-300 hover:text-white border border-white/10 bg-[#05070D]/80 hover:border-[#22E4FF]/40 rounded-none transition-colors"
+            className="lg:hidden p-2 text-neutral-300 hover:text-white border border-white/10 bg-[#05070D]/80 hover:border-[#22E4FF]/40 rounded-none transition-colors"
             aria-label={mobileMenuOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'}
             aria-expanded={mobileMenuOpen}
           >
@@ -104,8 +188,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#05070D]/98 border-b border-white/15 px-4 pt-4 pb-6 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
-          <nav className="flex flex-col gap-3" aria-label="Menu mobile">
+        <div className="lg:hidden bg-[#05070D]/98 border-b border-white/15 px-4 pt-4 pb-6 mt-3 max-h-[80vh] overflow-y-auto">
+          <nav className="flex flex-col gap-2" aria-label="Menu mobile">
             {navLinks.map((link) => (
               <a
                 key={link.href}
@@ -116,7 +200,90 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenRegister }) => {
                 {link.label}
               </a>
             ))}
-            <div className="pt-2 mt-2 border-t border-white/10 flex flex-col gap-2">
+
+            {/* Mobile Robotics Accordion */}
+            <div className="border-t border-white/10 pt-2 mt-1">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => handleBoardDropdownSelect('robotics', 'gioi-thieu')}
+                  className="px-3 py-2 text-base font-bold text-[#22E4FF] text-left flex-1 cursor-pointer"
+                >
+                  Robotics
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMobileExpandedBoard(mobileExpandedBoard === 'robotics' ? null : 'robotics')
+                  }
+                  className="p-2 text-slate-300 hover:text-white cursor-pointer"
+                  aria-label="Mở danh mục Robotics"
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${
+                      mobileExpandedBoard === 'robotics' ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+              {mobileExpandedBoard === 'robotics' && (
+                <div className="pl-5 flex flex-col gap-1 pb-2">
+                  {BOARD_TABS.robotics.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handleBoardDropdownSelect('robotics', tab.id)}
+                      className="text-left px-3 py-1.5 text-sm text-slate-300 hover:text-[#22E4FF] cursor-pointer"
+                    >
+                      • {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Drone Accordion */}
+            <div>
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => handleBoardDropdownSelect('drone', 'gioi-thieu')}
+                  className="px-3 py-2 text-base font-bold text-[#F37021] text-left flex-1 cursor-pointer"
+                >
+                  Drone
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMobileExpandedBoard(mobileExpandedBoard === 'drone' ? null : 'drone')
+                  }
+                  className="p-2 text-slate-300 hover:text-white cursor-pointer"
+                  aria-label="Mở danh mục Drone"
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${
+                      mobileExpandedBoard === 'drone' ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              </div>
+              {mobileExpandedBoard === 'drone' && (
+                <div className="pl-5 flex flex-col gap-1 pb-2">
+                  {BOARD_TABS.drone.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handleBoardDropdownSelect('drone', tab.id)}
+                      className="text-left px-3 py-1.5 text-sm text-slate-300 hover:text-orange-300 cursor-pointer"
+                    >
+                      • {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 mt-2 border-t border-white/10 flex flex-col gap-2">
               <button
                 type="button"
                 onClick={() => {

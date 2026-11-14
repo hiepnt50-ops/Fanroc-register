@@ -1,7 +1,14 @@
 export type SchoolLevel = 'Tiểu học' | 'THCS' | 'THPT';
 export type BoardType = 'Robotics' | 'Drone Soccer';
-export type CompetitionCategory = 'Nội bộ (FPT Schools)' | 'Mở rộng';
+export type BoardSlug = 'robotics' | 'drone';
+export type BoardTabId = 'gioi-thieu' | 'the-le' | 'the-thuc' | 'giai-thuong' | 'giai-phu';
+export type DroneFormat = 'Mô phỏng' | 'Thiết bị thật';
 export type MemberRole = 'Đội trưởng' | 'Thành viên' | 'Mentor' | 'Huấn luyện viên';
+
+export interface BoardTabItem {
+  id: BoardTabId;
+  label: string;
+}
 
 export interface MediaItem {
   id: string;
@@ -23,12 +30,28 @@ export interface TimelineItem {
 
 export interface BoardCardInfo {
   id: BoardType;
+  slug: BoardSlug;
   title: string;
-  subtitle: string;
-  targetLevel: string;
+  label: string;
+  mascotUrl: string;
+  levelChip: string;
+  teamChip: string;
   description: string;
-  features: string[];
-  isFeatured?: boolean;
+}
+
+export interface PrizeRow {
+  rank: string;
+  awardName: string;
+  count: number;
+  cashPrize: string;
+  scholarship: string;
+  isSpecial?: boolean;
+}
+
+export interface SubAwardItem {
+  title: string;
+  englishTitle: string;
+  description: string;
 }
 
 export interface TeamMember {
@@ -45,7 +68,7 @@ export interface TeamMember {
 export interface TeamRegistration {
   board: BoardType;
   schoolLevel: SchoolLevel;
-  category: CompetitionCategory;
+  competitionFormat?: DroneFormat;
   teamName: string;
   schoolName: string;
   province: string;

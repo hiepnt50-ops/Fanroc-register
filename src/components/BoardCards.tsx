@@ -1,161 +1,168 @@
-import React from 'react';
-import { BOARDS } from '../constants.ts';
-import { BoardType } from '../types.ts';
-import { Check, Flame, Bot, Send, AlertCircle, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  BOARDS,
+  LINH_VAT_ROBOTICS_URL as CONST_ROBO_URL,
+  LINH_VAT_DRONE_URL as CONST_DRONE_URL,
+} from '../constants.ts';
+import { BoardSlug } from '../types.ts';
+import { ArrowRight, Users, GraduationCap, Sparkles } from 'lucide-react';
+
+export const LINH_VAT_ROBOTICS_URL = CONST_ROBO_URL;
+export const LINH_VAT_DRONE_URL = CONST_DRONE_URL;
 
 interface BoardCardsProps {
-  onSelectBoard: (board: BoardType) => void;
+  onViewBoardDetail: (slug: BoardSlug) => void;
 }
 
-export const BoardCards: React.FC<BoardCardsProps> = ({ onSelectBoard }) => {
+export const BoardCards: React.FC<BoardCardsProps> = ({ onViewBoardDetail }) => {
+  const [hiddenMascots, setHiddenMascots] = useState<Record<string, boolean>>({});
+
+  const handleMascotError = (slug: string) => {
+    setHiddenMascots((prev) => ({ ...prev, [slug]: true }));
+  };
+
   return (
-    <section id="boards" className="py-20 md:py-28 bg-[#05070D] border-b border-white/10 relative overflow-hidden">
-      {/* Background grid */}
+    <section
+      id="boards"
+      className="py-20 md:py-28 bg-[#05070D] border-b border-white/10 relative overflow-hidden"
+    >
       <div className="absolute inset-0 tech-grid-pattern opacity-20 pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
-        {/* Centered Section Header (Congra style 4) */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#0066B3]/20 border border-[#22E4FF]/40 text-[#22E4FF] font-mono text-xs uppercase tracking-widest font-bold mb-3">
-            <Flame className="w-3.5 h-3.5 text-[#F37021]" />
-            HẠNG MỤC THI ĐẤU CHÍNH THỨC
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Centered Header */}
+        <div className="text-center max-w-3xl mx-auto mb-20 sm:mb-24">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0066B3]/25 border border-[#22E4FF]/40 text-[#22E4FF] font-mono text-xs uppercase tracking-widest font-bold mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-[#22E4FF]" />
+            <span>Bảng thi</span>
           </div>
 
-          <h2 className="font-heading font-black text-4xl sm:text-5xl md:text-6xl text-white uppercase tracking-tight leading-[0.9]">
-            CHỌN BẢNG ĐẤU CỦA BẠN
+          <h2 className="font-heading font-black text-4xl sm:text-5xl md:text-6xl text-white uppercase tracking-tight leading-[1.08]">
+            KHƠI NGUỒN <span className="text-[#22E4FF]">SÁNG TẠO</span>, HỒI SINH ĐẠI NGÀN
           </h2>
-
-          <p className="text-base sm:text-lg text-neutral-300 font-sans mt-4">
-            Chọn bảng thi phù hợp với đội của bạn và bắt đầu hành trình chinh phục đấu trường công nghệ FAnRoC 2026–2027.
-          </p>
         </div>
 
-        {/* 2 Equal Board Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10 items-stretch max-w-5xl mx-auto">
+        {/* Two Large Rounded Cards (Stacked on mobile, side-by-side on md+) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-14 md:gap-8 lg:gap-10 items-stretch">
           {BOARDS.map((board) => {
-            const isRobotics = board.id === 'Robotics';
+            const isRobotics = board.slug === 'robotics';
+            const mascotSrc = isRobotics ? LINH_VAT_ROBOTICS_URL : LINH_VAT_DRONE_URL;
+            const isMascotHidden = hiddenMascots[board.slug];
 
             return (
               <div
                 key={board.id}
-                onClick={() => onSelectBoard(board.id)}
-                className="relative flex flex-col justify-between p-8 sm:p-10 border border-white/20 hover:border-[#22E4FF] bg-[#05070D]/90 hover:bg-neutral-900/70 transition-all duration-300 cursor-pointer group rounded-none shadow-xl"
+                onClick={() => onViewBoardDetail(board.slug)}
+                className={`group relative flex flex-col rounded-3xl shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-1.5 ${
+                  isRobotics
+                    ? 'shadow-[0_20px_50px_rgba(20,200,216,0.16)] border border-cyan-400/35 hover:border-cyan-300/70'
+                    : 'shadow-[0_20px_50px_rgba(243,112,33,0.16)] border border-orange-400/35 hover:border-orange-300/70'
+                }`}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onSelectBoard(board.id);
+                    onViewBoardDetail(board.slug);
                   }
                 }}
-                aria-label={`Chọn bảng ${board.title} - ${board.targetLevel}`}
+                aria-label={`Xem chi tiết bảng ${board.title}`}
               >
-                {/* Top Badge */}
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2.5">
-                    {isRobotics ? (
-                      <Bot className="w-6 h-6 text-[#22E4FF]" />
-                    ) : (
-                      <Send className="w-6 h-6 text-[#22E4FF]" />
-                    )}
-                    <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#22E4FF]">
-                      {board.subtitle}
-                    </span>
-                  </div>
-
-                  <span className="px-2.5 py-1 bg-white/10 text-neutral-300 font-mono text-[10px] uppercase font-bold tracking-widest border border-white/10">
-                    BẢNG ĐẤU CHÍNH THỨC
-                  </span>
-                </div>
-
-                {/* Board Title */}
-                <div>
-                  <h3 className="font-heading font-black text-4xl sm:text-5xl text-white uppercase tracking-tight leading-none group-hover:text-[#22E4FF] transition-colors">
-                    {board.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-neutral-300 font-sans mt-2">
-                    {board.description}
-                  </p>
-                </div>
-
-                {/* Price Replacement: Big Prominent School Level */}
-                <div className="my-8 py-4 px-5 border bg-neutral-900/80 border-white/15 group-hover:border-[#22E4FF]/40 transition-colors">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-neutral-400 block font-bold">
-                    ĐỐI TƯỢNG DỰ THI
-                  </span>
-                  <div className="font-heading font-black text-3xl sm:text-4xl uppercase tracking-wider mt-0.5 text-[#22E4FF]">
-                    {board.targetLevel}
-                  </div>
-                </div>
-
-                {/* Checklist Features */}
-                <ul className="space-y-3.5 mb-10 flex-1">
-                  {board.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-none flex items-center justify-center shrink-0 mt-0.5 bg-[#0066B3] text-white">
-                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                      </div>
-                      <span className="text-sm leading-relaxed text-neutral-300 font-sans">
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA Button */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectBoard(board.id);
-                  }}
-                  className="w-full py-4 font-mono text-xs font-bold uppercase tracking-widest inline-flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer rounded-none border bg-[#F37021] hover:bg-[#ff7e33] text-white border-orange-400 shadow-[0_0_20px_rgba(243,112,33,0.35)] hover:shadow-[0_0_25px_rgba(243,112,33,0.55)]"
-                  aria-label={`Đăng ký đội thi bảng ${board.title}`}
+                {/* TOP HALF: Gradient Background + Left Text + Right Protruding Mascot */}
+                <div
+                  className={`relative rounded-t-3xl px-6 sm:px-8 pt-7 pb-6 min-h-[185px] sm:min-h-[205px] flex items-end justify-between ${
+                    isRobotics
+                      ? 'bg-gradient-to-br from-[#22D3EE] via-[#0EA5E9] to-[#0B5FA5]'
+                      : 'bg-gradient-to-br from-[#FB923C] via-[#F37021] to-[#C2410C]'
+                  }`}
                 >
-                  <span>ĐĂNG KÝ ĐỘI THI</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                  {/* Inner clipped decorative glow */}
+                  <div className="absolute inset-0 rounded-t-3xl overflow-hidden pointer-events-none" aria-hidden="true">
+                    <div className="absolute -top-12 -left-12 w-48 h-48 rounded-full bg-white/15 blur-2xl" />
+                    <div className="absolute bottom-0 right-0 w-56 h-32 bg-gradient-to-tl from-black/20 to-transparent" />
+                  </div>
 
-                {/* Corner Tech Accents */}
-                <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[#22E4FF]/60 group-hover:border-[#22E4FF]" />
-                <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#22E4FF]/60 group-hover:border-[#22E4FF]" />
-                <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#22E4FF]/60 group-hover:border-[#22E4FF]" />
-                <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#22E4FF]/60 group-hover:border-[#22E4FF]" />
+                  {/* Left: Small Label + Bold White Title */}
+                  <div className="relative z-10 max-w-[58%] pb-1">
+                    <span className="inline-block font-mono text-[11px] sm:text-xs font-bold uppercase tracking-widest text-white/90 bg-black/20 backdrop-blur-sm px-2.5 py-1 rounded-full mb-3 border border-white/20">
+                      {board.label}
+                    </span>
+
+                    {isRobotics ? (
+                      <h3 className="font-heading font-black text-4xl sm:text-5xl text-white uppercase tracking-tight leading-[0.95] drop-shadow-md">
+                        ROBOTICS
+                      </h3>
+                    ) : (
+                      <h3 className="font-heading font-black text-4xl sm:text-5xl text-white uppercase tracking-tight leading-[0.92] drop-shadow-md">
+                        <span className="block">DRONE</span>
+                        <span className="block">SOCCER</span>
+                      </h3>
+                    )}
+                  </div>
+
+                  {/* Right: Protruding Mascot (head and hands extend above card top edge) */}
+                  {!isMascotHidden && (
+                    <div className="relative z-20 w-[44%] sm:w-[46%] flex justify-end items-end self-stretch pointer-events-none">
+                      <img
+                        src={mascotSrc}
+                        alt={`Linh vật bảng ${board.title}`}
+                        referrerPolicy="no-referrer"
+                        onError={() => handleMascotError(board.slug)}
+                        className="w-36 h-44 sm:w-44 sm:h-52 -mt-14 sm:-mt-20 object-contain drop-shadow-[0_16px_24px_rgba(0,0,0,0.45)] group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* BOTTOM HALF: Dark Navy Content + Chips + Button */}
+                <div className="flex-1 rounded-b-3xl bg-[#0A193C] px-6 sm:px-8 py-7 flex flex-col justify-between">
+                  <div>
+                    <p className="text-sm sm:text-base text-slate-200 font-sans leading-relaxed">
+                      {board.description}
+                    </p>
+
+                    {/* Info Chips */}
+                    <div className="flex flex-wrap items-center gap-2.5 mt-5">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold border ${
+                          isRobotics
+                            ? 'bg-cyan-500/15 border-cyan-400/35 text-[#22E4FF]'
+                            : 'bg-orange-500/15 border-orange-400/35 text-orange-300'
+                        }`}
+                      >
+                        <GraduationCap className="w-3.5 h-3.5" />
+                        {board.levelChip}
+                      </span>
+
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-white/10 border border-white/15 text-white">
+                        <Users className="w-3.5 h-3.5 text-slate-300" />
+                        {board.teamChip}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Button: "Xem chi tiết →" */}
+                  <div className="mt-7 pt-5 border-t border-white/10">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewBoardDetail(board.slug);
+                      }}
+                      className={`w-full py-3.5 px-6 rounded-full font-mono text-xs sm:text-sm font-bold uppercase tracking-wider text-white inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg ${
+                        isRobotics
+                          ? 'bg-gradient-to-r from-[#14C8D8] to-[#0B5FA5] hover:brightness-110 shadow-[0_0_20px_rgba(20,200,216,0.35)]'
+                          : 'bg-gradient-to-r from-[#F37021] to-[#F59E0B] hover:brightness-110 shadow-[0_0_20px_rgba(243,112,33,0.35)]'
+                      }`}
+                    >
+                      <span>Xem chi tiết</span>
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                </div>
               </div>
             );
           })}
         </div>
-
-        {/* General Guidelines Callout Row */}
-        <div className="mt-12 max-w-5xl mx-auto p-6 bg-neutral-900/90 border border-white/20 relative shadow-lg">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="p-3 bg-[#F37021]/20 border border-orange-400/40 text-[#F37021] shrink-0">
-              <AlertCircle className="w-6 h-6" />
-            </div>
-
-            <div className="flex-1">
-              <span className="font-mono text-xs text-[#22E4FF] uppercase tracking-widest block font-bold mb-1">
-                LƯU Ý CHUNG CHO TOÀN BỘ CÁC BẢNG ĐẤU
-              </span>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs sm:text-sm text-neutral-300 font-sans mt-2">
-                <div className="flex items-start gap-2">
-                  <span className="text-[#22E4FF] font-mono font-bold">•</span>
-                  <span>Đội gồm học sinh cùng một trường, cùng cấp học, không thi vượt cấp.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-[#22E4FF] font-mono font-bold">•</span>
-                  <span>Mỗi học sinh chỉ đăng ký một đội, một bảng thi duy nhất.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-[#22E4FF] font-mono font-bold">•</span>
-                  <span>Mỗi đội tối đa 1 mentor (giáo viên/phụ huynh), mentor không trực tiếp điều khiển thiết bị.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </section>
   );

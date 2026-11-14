@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   BoardType,
   SchoolLevel,
-  CompetitionCategory,
+  DroneFormat,
   TeamMember,
   ExcelExportRow,
   RegistrationSuccessData,
 } from '../types.ts';
 import {
   APPS_SCRIPT_URL,
-  TEAM_RULES,
-  VALID_BOARD_MATRIX,
-  GRADES_BY_LEVEL,
+  MIN_STUDENTS,
+  MAX_STUDENTS,
+  ALL_SCHOOL_LEVELS,
+  BOARD_LEVEL_CONFIG,
+  SCHOOLS,
   PROVINCES_OF_VIETNAM,
 } from '../constants.ts';
 import {
@@ -23,7 +25,6 @@ import {
   Flame,
   RotateCcw,
   Info,
-  UserCheck,
   GraduationCap,
   Users,
 } from 'lucide-react';
@@ -55,6 +56,42 @@ interface StudentData {
   notes: string;
 }
 
+function createInitialStudents(): StudentData[] {
+  const ts = Date.now();
+  return [
+    {
+      id: `student-${ts}-1`,
+      role: 'Đội trưởng',
+      fullName: '',
+      birthDate: '',
+      grade: '',
+      phone: '',
+      email: '',
+      notes: '',
+    },
+    {
+      id: `student-${ts}-2`,
+      role: 'Thành viên',
+      fullName: '',
+      birthDate: '',
+      grade: '',
+      phone: '',
+      email: '',
+      notes: '',
+    },
+    {
+      id: `student-${ts}-3`,
+      role: 'Thành viên',
+      fullName: '',
+      birthDate: '',
+      grade: '',
+      phone: '',
+      email: '',
+      notes: '',
+    },
+  ];
+}
+
 export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   isOpen,
   onClose,
@@ -62,7 +99,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 }) => {
   const [board, setBoard] = useState<BoardType>(initialBoard);
   const [schoolLevel, setSchoolLevel] = useState<SchoolLevel>('THCS');
-  const [category, setCategory] = useState<CompetitionCategory>('Nội bộ (FPT Schools)');
   const [teamName, setTeamName] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [province, setProvince] = useState(PROVINCES_OF_VIETNAM[0]);
@@ -79,83 +115,49 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     notes: '',
   });
 
-  // Students list (Captain + Members)
-  const [students, setStudents] = useState<StudentData[]>([
-    {
-      id: 'student-captain',
-      role: 'Đội trưởng',
-      fullName: '',
-      birthDate: '',
-      grade: 'Lớp 6',
-      phone: '',
-      email: '',
-      notes: '',
-    },
-    {
-      id: 'student-member-1',
-      role: 'Thành viên',
-      fullName: '',
-      birthDate: '',
-      grade: 'Lớp 6',
-      phone: '',
-      email: '',
-      notes: '',
-    },
-  ]);
+  // Students list (Captain + Members, default MIN_STUDENTS = 3)
+  const [students, setStudents] = useState<StudentData[]>(() => createInitialStudents());
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successData, setSuccessData] = useState<RegistrationSuccessData | null>(null);
 
+  // Auto-determined Drone format based on schoolLevel
+  const currentLevelConfig = BOARD_LEVEL_CONFIG[board][schoolLevel];
+  const competitionFormat: DroneFormat | undefined =
+    board === 'Drone Soccer' ? currentLevelConfig.format : undefined;
+
   // Sync initialBoard prop when opening
   useEffect(() => {
     if (isOpen) {
       setBoard(initialBoard);
-      const validLevels = VALID_BOARD_MATRIX[initialBoard].levels;
-      const targetLevel = validLevels.includes(schoolLevel) ? schoolLevel : validLevels[0];
-      setSchoolLevel(targetLevel);
-      const validCats = VALID_BOARD_MATRIX[initialBoard].categoriesByLevel[targetLevel];
-      setCategory(validCats[0]);
+      if (!BOARD_LEVEL_CONFIG[initialBoard][schoolLevel].enabled) {
+        const firstEnabled = ALL_SCHOOL_LEVELS.find(
+          (lvl) => BOARD_LEVEL_CONFIG[initialBoard][lvl].enabled
+        );
+        if (firstEnabled) setSchoolLevel(firstEnabled);
+      }
       setSuccessData(null);
       setErrors({});
     }
   }, [isOpen, initialBoard]);
 
-  // Adjust level & category if board changes
   const handleBoardChange = (newBoard: BoardType) => {
     setBoard(newBoard);
-    const validLevels = VALID_BOARD_MATRIX[newBoard].levels;
-    let newLevel = schoolLevel;
-    if (!validLevels.includes(schoolLevel)) {
-      newLevel = validLevels[0];
-      setSchoolLevel(newLevel);
+    if (!BOARD_LEVEL_CONFIG[newBoard][schoolLevel].enabled) {
+      const firstEnabled = ALL_SCHOOL_LEVELS.find(
+        (lvl) => BOARD_LEVEL_CONFIG[newBoard][lvl].enabled
+      );
+      if (firstEnabled) setSchoolLevel(firstEnabled);
     }
-    const validCats = VALID_BOARD_MATRIX[newBoard].categoriesByLevel[newLevel];
-    if (!validCats.includes(category)) {
-      setCategory(validCats[0]);
-    }
-    const defaultGrade = GRADES_BY_LEVEL[newLevel][0];
-    setStudents((prev) => prev.map((s) => ({ ...s, grade: defaultGrade })));
   };
 
   const handleLevelChange = (newLevel: SchoolLevel) => {
+    if (!BOARD_LEVEL_CONFIG[board][newLevel].enabled) return;
     setSchoolLevel(newLevel);
-    const validCats = VALID_BOARD_MATRIX[board].categoriesByLevel[newLevel];
-    if (!validCats.includes(category)) {
-      setCategory(validCats[0]);
-    }
-    const defaultGrade = GRADES_BY_LEVEL[newLevel][0];
-    // Adjust student count if exceeding THPT limit (max 2)
-    const maxStudentsAllowed = TEAM_RULES[newLevel].maxStudents;
-    setStudents((prev) => {
-      const trimmed = prev.slice(0, maxStudentsAllowed);
-      return trimmed.map((s) => ({ ...s, grade: defaultGrade }));
-    });
   };
 
-  // Team capacity rules
-  const rules = TEAM_RULES[schoolLevel];
-  const canAddMoreStudents = students.length < rules.maxStudents;
+  const canAddMoreStudents = students.length < MAX_STUDENTS;
 
   const handleAddStudent = () => {
     if (!canAddMoreStudents) return;
@@ -164,7 +166,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       role: 'Thành viên',
       fullName: '',
       birthDate: '',
-      grade: GRADES_BY_LEVEL[schoolLevel][0],
+      grade: '',
       phone: '',
       email: '',
       notes: '',
@@ -174,10 +176,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
   const handleRemoveStudent = (id: string) => {
     if (students.length <= 1) return;
-    // Don't allow removing captain unless there's another student
     setStudents((prev) => {
       const filtered = prev.filter((s) => s.id !== id);
-      // Ensure at least one captain
       if (filtered.length > 0 && !filtered.some((s) => s.role === 'Đội trưởng')) {
         filtered[0].role = 'Đội trưởng';
       }
@@ -213,15 +213,18 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Validation
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
+
+    if (!BOARD_LEVEL_CONFIG[board][schoolLevel].enabled) {
+      newErrors.boardLevel = 'Tổ hợp bảng thi và cấp học này không tổ chức';
+    }
 
     if (!teamName.trim()) {
       newErrors.teamName = 'Vui lòng nhập tên đội thi';
     }
     if (!schoolName.trim()) {
-      newErrors.schoolName = 'Vui lòng nhập tên trường học';
+      newErrors.schoolName = 'Vui lòng nhập tên trường học thuộc hệ thống FPT Schools';
     }
     if (!province) {
       newErrors.province = 'Vui lòng chọn Tỉnh/Thành phố';
@@ -262,8 +265,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       newErrors.captain = 'Đội thi phải có đúng 1 Đội trưởng';
     }
 
-    if (students.length < rules.minStudents || students.length > rules.maxStudents) {
-      newErrors.students = `Cấp ${schoolLevel} yêu cầu từ ${rules.minStudents} đến ${rules.maxStudents} học sinh trong đội (hiện có: ${students.length})`;
+    if (students.length < MIN_STUDENTS || students.length > MAX_STUDENTS) {
+      newErrors.students = `Mỗi đội phải có từ ${MIN_STUDENTS} đến ${MAX_STUDENTS} học sinh (không tính Mentor). Hiện có: ${students.length} học sinh.`;
     }
 
     // Validate each student
@@ -285,8 +288,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
         }
       }
 
-      if (!s.grade) {
-        newErrors[`${prefix}_grade`] = 'Vui lòng chọn lớp học';
+      if (!s.grade || !s.grade.trim()) {
+        newErrors[`${prefix}_grade`] = 'Vui lòng nhập lớp học';
       }
 
       if (!s.phone.trim()) {
@@ -327,7 +330,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
     setIsSubmitting(true);
 
-    const boardValueFormatted = `${board} – ${schoolLevel} – ${category}`;
+    const boardValueFormatted =
+      board === 'Robotics'
+        ? `Robotics – ${schoolLevel}`
+        : `Drone Soccer – ${schoolLevel} – ${competitionFormat}`;
     const code = generateRegistrationCode();
 
     const allMembers: TeamMember[] = [];
@@ -370,7 +376,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
         role: student.role,
         fullName: student.fullName.trim(),
         birthDate: student.birthDate,
-        grade: student.grade,
+        grade: student.grade.trim(),
         phone: student.phone.trim(),
         email: student.email.trim(),
         notes: student.notes,
@@ -384,7 +390,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
         Tỉnh: province,
         'Họ tên': student.fullName.trim(),
         'Ngày sinh': student.birthDate,
-        Lớp: student.grade,
+        Lớp: student.grade.trim(),
         'Số điện thoại': student.phone.trim(),
         Email: student.email.trim(),
         'Nhiệm vụ': student.role,
@@ -413,7 +419,10 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
           }),
         });
       } else {
-        console.group('%c[FAnRoC 2026-2027] ĐĂNG KÝ THÀNH CÔNG (CHẾ ĐỘ DEMO)', 'color: #22E4FF; font-weight: bold;');
+        console.group(
+          '%c[FAnRoC 2026-2027] ĐĂNG KÝ THÀNH CÔNG (CHẾ ĐỘ DEMO)',
+          'color: #22E4FF; font-weight: bold;'
+        );
         console.log('Mã đăng ký:', code);
         console.log('Bảng thi:', boardValueFormatted);
         console.log('Tên đội:', teamName);
@@ -428,7 +437,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
         registration: {
           board,
           schoolLevel,
-          category,
+          competitionFormat,
           teamName: teamName.trim(),
           schoolName: schoolName.trim(),
           province,
@@ -446,7 +455,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
         registration: {
           board,
           schoolLevel,
-          category,
+          competitionFormat,
           teamName: teamName.trim(),
           schoolName: schoolName.trim(),
           province,
@@ -464,7 +473,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const handleDownloadCsv = () => {
     if (!successData) return;
 
-    // UTF-8 BOM so Vietnamese displays perfectly in Excel
     const BOM = '\uFEFF';
     const headers = [
       'STT',
@@ -508,7 +516,9 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
     link.href = url;
     link.setAttribute(
       'download',
-      `FAnRoC_DangKy_${successData.registration.teamName.replace(/\s+/g, '_')}_${successData.registrationCode}.csv`
+      `FAnRoC_DangKy_${successData.registration.teamName.replace(/\s+/g, '_')}_${
+        successData.registrationCode
+      }.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -530,28 +540,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       roleType: 'Giáo viên hướng dẫn',
       notes: '',
     });
-    setStudents([
-      {
-        id: `student-${Date.now()}-1`,
-        role: 'Đội trưởng',
-        fullName: '',
-        birthDate: '',
-        grade: GRADES_BY_LEVEL[schoolLevel][0],
-        phone: '',
-        email: '',
-        notes: '',
-      },
-      {
-        id: `student-${Date.now()}-2`,
-        role: 'Thành viên',
-        fullName: '',
-        birthDate: '',
-        grade: GRADES_BY_LEVEL[schoolLevel][0],
-        phone: '',
-        email: '',
-        notes: '',
-      },
-    ]);
+    setStudents(createInitialStudents());
     setErrors({});
   };
 
@@ -565,7 +554,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
       aria-label="Biểu mẫu đăng ký đội thi FAnRoC 2026-2027"
     >
       <div className="w-full max-w-3xl min-h-full bg-[#05070D] border-l border-white/20 text-white flex flex-col justify-between shadow-2xl relative">
-        
         {/* Modal Header */}
         <div className="p-6 sm:p-8 bg-[#05070D] border-b border-white/10 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md">
           <div>
@@ -593,7 +581,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
           {successData ? (
             /* SUCCESS VIEW */
             <div className="space-y-8 animate-in fade-in duration-300">
-              {/* Notice for Demo Mode */}
               {successData.isDemo && (
                 <div className="p-4 bg-amber-500/10 border border-amber-500/40 text-amber-200 text-xs font-mono flex items-center gap-2">
                   <Info className="w-4 h-4 text-amber-400 shrink-0" />
@@ -615,7 +602,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                   Hồ sơ đội thi của bạn đã được ghi nhận vào hệ thống FAnRoC 2026–2027.
                 </p>
 
-                {/* Registration Code */}
                 <div className="mt-4 inline-block px-5 py-2.5 bg-[#05070D] border-2 border-[#22E4FF] text-[#22E4FF] font-mono text-lg font-bold tracking-widest shadow-[0_0_15px_rgba(34,228,255,0.4)]">
                   MÃ ĐĂNG KÝ: {successData.registrationCode}
                 </div>
@@ -629,22 +615,25 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 <h4 className="font-mono text-xs text-[#22E4FF] uppercase tracking-widest font-bold mb-4">
                   TỔNG QUAN ĐỘI THI
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-sans border-b border-white/10 pb-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-sans border-b border-white/10 pb-4 mb-4">
                   <div>
                     <span className="text-neutral-400 block font-mono text-[10px]">TÊN ĐỘI</span>
-                    <span className="text-white font-bold text-sm">{successData.registration.teamName}</span>
+                    <span className="text-white font-bold text-sm">
+                      {successData.registration.teamName}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-neutral-400 block font-mono text-[10px]">BẢNG & CẤP</span>
-                    <span className="text-white font-semibold">{successData.registration.board} ({successData.registration.schoolLevel})</span>
-                  </div>
-                  <div>
-                    <span className="text-neutral-400 block font-mono text-[10px]">HẠNG MỤC</span>
-                    <span className="text-white font-semibold">{successData.registration.category}</span>
+                    <span className="text-neutral-400 block font-mono text-[10px]">BẢNG THI</span>
+                    <span className="text-white font-semibold">
+                      {successData.rows[0]?.Bảng ||
+                        `${successData.registration.board} – ${successData.registration.schoolLevel}`}
+                    </span>
                   </div>
                   <div>
                     <span className="text-neutral-400 block font-mono text-[10px]">TRƯỜNG & TỈNH</span>
-                    <span className="text-white font-semibold">{successData.registration.schoolName} ({successData.registration.province})</span>
+                    <span className="text-white font-semibold">
+                      {successData.registration.schoolName} ({successData.registration.province})
+                    </span>
                   </div>
                 </div>
 
@@ -668,7 +657,8 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                           <td className="py-2.5 pr-2">
                             <span
                               className={`px-2 py-0.5 font-mono text-[9px] uppercase font-bold ${
-                                row['Nhiệm vụ'].includes('Mentor') || row['Nhiệm vụ'].includes('Huấn luyện viên')
+                                row['Nhiệm vụ'].includes('Mentor') ||
+                                row['Nhiệm vụ'].includes('Huấn luyện viên')
                                   ? 'bg-[#0066B3] text-white border border-[#22E4FF]/40'
                                   : row['Nhiệm vụ'] === 'Đội trưởng'
                                   ? 'bg-[#F37021] text-white'
@@ -719,7 +709,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
           ) : (
             /* REGISTRATION FORM VIEW */
             <form onSubmit={handleSubmit} noValidate className="space-y-9">
-              
               {/* SECTION 1: THÔNG TIN ĐỘI */}
               <div className="space-y-5">
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
@@ -734,60 +723,105 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                   <span className="font-mono text-xs text-[#22E4FF]">BƯỚC 1/3</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Bảng thi & Cấp học (Chỉ 2 lựa chọn, bỏ Hạng mục) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Bảng thi */}
                   <div>
-                    <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-1.5 font-bold">
+                    <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-2 font-bold">
                       Bảng thi <span className="text-[#F37021]">*</span>
                     </label>
-                    <select
-                      value={board}
-                      onChange={(e) => handleBoardChange(e.target.value as BoardType)}
-                      className="w-full bg-neutral-900 border border-white/20 p-3 text-sm text-white font-medium focus:border-[#22E4FF] focus:outline-none rounded-none"
-                    >
-                      <option value="Robotics">Robotics</option>
-                      <option value="Drone Soccer">Drone Soccer</option>
-                    </select>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {(['Robotics', 'Drone Soccer'] as BoardType[]).map((b) => {
+                        const isSelected = board === b;
+                        return (
+                          <button
+                            key={b}
+                            type="button"
+                            onClick={() => handleBoardChange(b)}
+                            className={`p-3 border text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? b === 'Robotics'
+                                  ? 'bg-[#0066B3]/35 border-[#22E4FF] text-white shadow-[0_0_15px_rgba(34,228,255,0.25)]'
+                                  : 'bg-[#F37021]/25 border-[#F37021] text-white shadow-[0_0_15px_rgba(243,112,33,0.25)]'
+                                : 'bg-neutral-900 border-white/20 text-neutral-300 hover:border-white/40'
+                            }`}
+                          >
+                            <div className="font-heading font-bold text-lg uppercase tracking-wide">
+                              {b}
+                            </div>
+                            <div className="font-mono text-[10px] text-neutral-300 mt-0.5">
+                              {b === 'Robotics' ? 'THCS (Lớp 6–9)' : 'Lớp 3–12'}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Cấp học */}
                   <div>
-                    <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-1.5 font-bold">
+                    <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-2 font-bold">
                       Cấp học <span className="text-[#F37021]">*</span>
                     </label>
-                    <select
-                      value={schoolLevel}
-                      onChange={(e) => handleLevelChange(e.target.value as SchoolLevel)}
-                      className="w-full bg-neutral-900 border border-white/20 p-3 text-sm text-white font-medium focus:border-[#22E4FF] focus:outline-none rounded-none"
-                    >
-                      {VALID_BOARD_MATRIX[board].levels.map((lvl) => (
-                        <option key={lvl} value={lvl}>
-                          {lvl}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {ALL_SCHOOL_LEVELS.map((lvl) => {
+                        const cfg = BOARD_LEVEL_CONFIG[board][lvl];
+                        const isSelected = schoolLevel === lvl;
 
-                  {/* Hạng mục */}
-                  <div>
-                    <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-1.5 font-bold">
-                      Hạng mục <span className="text-[#F37021]">*</span>
-                    </label>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value as CompetitionCategory)}
-                      className="w-full bg-neutral-900 border border-white/20 p-3 text-sm text-white font-medium focus:border-[#22E4FF] focus:outline-none rounded-none"
-                    >
-                      {VALID_BOARD_MATRIX[board].categoriesByLevel[schoolLevel].map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
+                        return (
+                          <button
+                            key={lvl}
+                            type="button"
+                            disabled={!cfg.enabled}
+                            onClick={() => handleLevelChange(lvl)}
+                            className={`p-2.5 border text-left transition-all ${
+                              !cfg.enabled
+                                ? 'bg-neutral-900/40 border-white/10 text-neutral-500 opacity-45 cursor-not-allowed'
+                                : isSelected
+                                ? 'bg-[#0066B3]/35 border-[#22E4FF] text-white cursor-pointer shadow-[0_0_12px_rgba(34,228,255,0.25)]'
+                                : 'bg-neutral-900 border-white/20 text-neutral-300 hover:border-white/40 cursor-pointer'
+                            }`}
+                          >
+                            <div className="font-sans font-bold text-xs sm:text-sm">{lvl}</div>
+                            <div
+                              className={`font-mono text-[10px] mt-0.5 ${
+                                !cfg.enabled
+                                  ? 'text-neutral-400'
+                                  : cfg.format
+                                  ? 'text-[#22E4FF]'
+                                  : 'text-neutral-300'
+                              }`}
+                            >
+                              {!cfg.enabled
+                                ? cfg.note
+                                : cfg.format
+                                ? cfg.format
+                                : 'Lớp 6–9'}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {errors.boardLevel && (
+                      <span className="text-[11px] text-red-400 font-sans mt-1 block">
+                        {errors.boardLevel}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Team Name, School, Province */}
+                {/* Auto-determined format notice for Drone Soccer */}
+                {board === 'Drone Soccer' && competitionFormat && (
+                  <div className="p-3 bg-[#F37021]/10 border border-[#F37021]/35 text-xs text-orange-200 font-sans flex items-center gap-2">
+                    <Info className="w-4 h-4 text-[#F37021] shrink-0" />
+                    <span>
+                      Hình thức thi đấu bảng <strong>Drone Soccer – {schoolLevel}</strong>:{' '}
+                      <strong className="text-white">{competitionFormat}</strong> (tự động xác định theo cấp học).
+                    </span>
+                  </div>
+                )}
+
+                {/* Team Name, School (with datalist), Province */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Tên đội */}
                   <div className="sm:col-span-1">
@@ -810,22 +844,31 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                     )}
                   </div>
 
-                  {/* Trường */}
+                  {/* Trường thuộc hệ thống FPT Schools */}
                   <div className="sm:col-span-1">
                     <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-1.5 font-bold">
-                      Trường học <span className="text-[#F37021]">*</span>
+                      Trường <span className="text-[#F37021]">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Ví dụ: THCS FPT Cầu Giấy"
+                      list="fpt-schools-list"
+                      placeholder="Chọn hoặc nhập tên trường..."
                       value={schoolName}
                       onChange={(e) => setSchoolName(e.target.value)}
                       className={`w-full bg-neutral-900 border p-3 text-sm text-white placeholder-neutral-500 focus:outline-none rounded-none ${
                         errors.schoolName ? 'border-red-500' : 'border-white/20 focus:border-[#22E4FF]'
                       }`}
                     />
+                    <datalist id="fpt-schools-list">
+                      {SCHOOLS.map((school) => (
+                        <option key={school} value={school} />
+                      ))}
+                    </datalist>
+                    <span className="text-[10px] text-[#22E4FF]/90 font-sans mt-1 block">
+                      Trường thuộc hệ thống FPT Schools
+                    </span>
                     {errors.schoolName && (
-                      <span className="text-[11px] text-red-400 font-sans mt-1 block">
+                      <span className="text-[11px] text-red-400 font-sans mt-0.5 block">
                         {errors.schoolName}
                       </span>
                     )}
@@ -851,7 +894,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 </div>
               </div>
 
-              {/* SECTION 2: Ô ĐĂNG KÝ CỦA HUẤN LUYỆN VIÊN / MENTOR (DEDICATED) */}
+              {/* SECTION 2: HUẤN LUYỆN VIÊN / MENTOR */}
               <div className="space-y-5 p-5 sm:p-6 bg-[#0066B3]/10 border border-[#0066B3]/40 relative">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2">
@@ -864,7 +907,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                     </h3>
                   </div>
 
-                  {/* Toggle Coach Attendance */}
                   <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
@@ -881,7 +923,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 {coach.hasCoach ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {/* Full Name */}
                       <div>
                         <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                           Họ và tên HLV <span className="text-[#F37021]">*</span>
@@ -902,7 +943,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                         )}
                       </div>
 
-                      {/* Birth Date */}
                       <div>
                         <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                           Ngày sinh HLV <span className="text-[#F37021]">*</span>
@@ -922,7 +962,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                         )}
                       </div>
 
-                      {/* Role Type */}
                       <div>
                         <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                           Vai trò HLV <span className="text-[#F37021]">*</span>
@@ -944,7 +983,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Phone */}
                       <div>
                         <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                           Số điện thoại HLV <span className="text-[#F37021]">*</span>
@@ -965,7 +1003,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                         )}
                       </div>
 
-                      {/* Email */}
                       <div>
                         <label className="block font-mono text-xs text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                           Email HLV <span className="text-[#F37021]">*</span>
@@ -987,7 +1024,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Notes */}
                     <div>
                       <label className="block font-mono text-[10px] text-neutral-400 uppercase tracking-wider mb-1">
                         Ghi chú Huấn luyện viên (Đơn vị công tác, chức vụ...)
@@ -1008,9 +1044,9 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 )}
               </div>
 
-              {/* SECTION 3: DANH SÁCH HỌC SINH / VẬN ĐỘNG VIÊN */}
+              {/* SECTION 3: DANH SÁCH HỌC SINH (MIN_STUDENTS = 3, MAX_STUDENTS = 4) */}
               <div className="space-y-5">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-2">
                   <div className="flex items-center gap-2">
                     <span className="w-6 h-6 bg-[#0066B3] text-white font-mono text-xs font-bold flex items-center justify-center">
                       3
@@ -1020,8 +1056,14 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                         <Users className="w-5 h-5 text-[#22E4FF]" />
                         DANH SÁCH HỌC SINH (VẬN ĐỘNG VIÊN)
                       </h3>
-                      <p className="text-xs text-neutral-400 font-sans mt-0.5">
-                        Cấp {schoolLevel}: {rules.minStudents}–{rules.maxStudents} học sinh (Hiện có: {students.length} em)
+                      <p
+                        className={`text-xs font-mono mt-0.5 font-bold ${
+                          students.length < MIN_STUDENTS || students.length > MAX_STUDENTS
+                            ? 'text-red-400'
+                            : 'text-[#22E4FF]'
+                        }`}
+                      >
+                        Học sinh: {students.length}/{MAX_STUDENTS} (tối thiểu {MIN_STUDENTS})
                       </p>
                     </div>
                   </div>
@@ -1039,7 +1081,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                   )}
                 </div>
 
-                {/* Role Errors */}
+                {/* Role / Count Errors */}
                 {errors.students && (
                   <div className="p-3 bg-red-950/40 border border-red-500/50 text-red-200 text-xs font-sans">
                     {errors.students}
@@ -1066,7 +1108,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                             : 'bg-neutral-900/50 border-white/15'
                         }`}
                       >
-                        {/* Member Header */}
                         <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
                           <div className="flex items-center gap-3">
                             <span className="font-mono text-xs font-bold text-[#22E4FF]">
@@ -1093,9 +1134,7 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                           )}
                         </div>
 
-                        {/* Student Input Fields */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {/* Role Selector */}
                           <div>
                             <label className="block font-mono text-[11px] text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                               Nhiệm vụ <span className="text-[#F37021]">*</span>
@@ -1116,7 +1155,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                             </select>
                           </div>
 
-                          {/* Full Name */}
                           <div>
                             <label className="block font-mono text-[11px] text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                               Họ và tên học sinh <span className="text-[#F37021]">*</span>
@@ -1141,7 +1179,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                             )}
                           </div>
 
-                          {/* Date of Birth */}
                           <div>
                             <label className="block font-mono text-[11px] text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                               Ngày sinh <span className="text-[#F37021]">*</span>
@@ -1165,28 +1202,29 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                             )}
                           </div>
 
-                          {/* Grade */}
                           <div>
                             <label className="block font-mono text-[11px] text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                               Lớp học <span className="text-[#F37021]">*</span>
                             </label>
-                            <select
+                            <input
+                              type="text"
+                              placeholder={`Ví dụ: ${
+                                schoolLevel === 'Tiểu học'
+                                  ? '4A1'
+                                  : schoolLevel === 'THPT'
+                                  ? '10 Tin'
+                                  : '6A2'
+                              }`}
                               value={student.grade}
                               onChange={(e) =>
                                 handleUpdateStudent(student.id, 'grade', e.target.value)
                               }
-                              className={`w-full bg-[#05070D] border p-2.5 text-xs text-white focus:outline-none rounded-none ${
+                              className={`w-full bg-[#05070D] border p-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none rounded-none ${
                                 errors[`${prefix}_grade`]
                                   ? 'border-red-500'
                                   : 'border-white/20 focus:border-[#22E4FF]'
                               }`}
-                            >
-                              {GRADES_BY_LEVEL[schoolLevel].map((g) => (
-                                <option key={g} value={g}>
-                                  {g}
-                                </option>
-                              ))}
-                            </select>
+                            />
                             {errors[`${prefix}_grade`] && (
                               <span className="text-[10px] text-red-400 font-sans mt-0.5 block">
                                 {errors[`${prefix}_grade`]}
@@ -1194,7 +1232,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                             )}
                           </div>
 
-                          {/* Phone */}
                           <div>
                             <label className="block font-mono text-[11px] text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                               Số điện thoại <span className="text-[#F37021]">*</span>
@@ -1219,7 +1256,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                             )}
                           </div>
 
-                          {/* Email */}
                           <div>
                             <label className="block font-mono text-[11px] text-neutral-300 uppercase tracking-wider mb-1 font-bold">
                               Email <span className="text-[#F37021]">*</span>
@@ -1244,7 +1280,6 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                             )}
                           </div>
 
-                          {/* Notes */}
                           <div className="sm:col-span-3">
                             <label className="block font-mono text-[10px] text-neutral-400 uppercase tracking-wider mb-1">
                               Ghi chú cá nhân (tùy chọn)
@@ -1321,11 +1356,9 @@ export const RegistrationModal: React.FC<RegistrationModalProps> = ({
                   </button>
                 </div>
               </div>
-
             </form>
           )}
         </div>
-
       </div>
     </div>
   );

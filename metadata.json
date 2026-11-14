@@ -1,6 +1,6 @@
 {
-  "name": "FAnRoC 2026–2027 | FPT Schools AI & Robotics Challenge",
-  "description": "Cổng thông tin và đăng ký chính thức cuộc thi AI & Robotics Challenge 2026–2027 của Hệ thống Trường Phổ thông FPT (FPT Schools).",
+  "name": "Cổng đăng ký FAnRoC 2026 – 2027 – Vòng cơ sở",
+  "description": "Cổng thông tin và đăng ký đội thi vòng cơ sở cuộc thi FPT Schools AI & Robotics Challenge (FAnRoC) 2026 – 2027.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
