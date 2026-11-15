@@ -161,7 +161,7 @@ export default function App() {
           />
 
           {/* Section 5: Prize Structure */}
-          <PrizesSection />
+           {/* <PrizesSection /> */}
         </main>
       )}
 

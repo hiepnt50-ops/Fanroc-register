@@ -59,11 +59,11 @@ export const PrizesSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Shared Prize Table & Sub-awards */}
+        {/* Shared Prize Table & Sub-awards
         <div key={activeTab} className="space-y-10 animate-roadmap-stage">
           <PrizeTable boardSlug={activeTab} />
           <SubAwardsList boardSlug={activeTab} />
-        </div>
+        </div> */}
       </div>
     </section>
   );
