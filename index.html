@@ -2656,7 +2656,7 @@
       backdrop-filter: blur(12px);
       border-top: 1px solid var(--glass-border);
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       padding: 6px 4px;
     }
     @media (min-width: 768px) { .mobile-bottom-nav { display: none; } }
@@ -2735,7 +2735,7 @@
         <a class="nav-link" href="#bang-thi" data-open-board="robotics">Robotics</a>
         <a class="nav-link" href="#bang-thi" data-open-board="drone">Drone Soccer</a>
         <a class="nav-link" href="#lo-trinh">Lộ trình</a>
-        <!-- <a class="nav-link" href="#giai-thuong">Giải thưởng</a> -->
+        <a class="nav-link" href="#giai-thuong">Giải thưởng</a>
       </nav>
 
       <div class="header-actions">
@@ -2754,7 +2754,7 @@
       <a class="nav-link" href="#bang-thi" data-open-board="robotics">Robotics</a>
       <a class="nav-link" href="#bang-thi" data-open-board="drone">Drone Soccer</a>
       <a class="nav-link" href="#lo-trinh">Lộ trình</a>
-      <!-- <a class="nav-link" href="#giai-thuong">Giải thưởng</a> -->
+      <a class="nav-link" href="#giai-thuong">Giải thưởng</a>
     </nav>
   </header>
 
@@ -2933,8 +2933,8 @@
     </section>
 
     <!-- ====================================================================
-         7. GIẢI THƯỞNG (TOGGLE ROBOTICS / DRONE SOCCER + BẢNG CODE) - COMMENTED
-         ====================================================================
+         7. GIẢI THƯỞNG (TOGGLE ROBOTICS / DRONE SOCCER + BẢNG CODE)
+         ==================================================================== -->
     <section id="giai-thuong" class="section awards-section">
       <div class="container">
         <div class="awards-shell theme-robotics reveal" id="awardsShell">
@@ -2970,7 +2970,6 @@
         </div>
       </div>
     </section>
-    -->
 
     <!-- ====================================================================
          10. 4 NGUYÊN TẮC LẬP ĐỘI & SAO CHÉP EMAIL HỖ TRỢ
@@ -3294,7 +3293,7 @@
           <ul class="footer-links">
             <li><a href="#gioi-thieu">Giới thiệu cuộc thi</a></li>
             <li><a href="#lo-trinh">Lộ trình mùa giải</a></li>
-            <!-- <li><a href="#giai-thuong">Cơ cấu Giải thưởng</a></li> -->
+            <li><a href="#giai-thuong">Cơ cấu Giải thưởng</a></li>
             <li><a href="#nguyen-tac">4 nguyên tắc lập đội</a></li>
           </ul>
         </div>
@@ -3322,7 +3321,7 @@
     <a href="#hero" class="mb-item"><span>🏠</span><span>Trang chủ</span></a>
     <a href="#bang-thi" class="mb-item" data-open-board="robotics"><span>🤖</span><span>Robotics</span></a>
     <a href="#bang-thi" class="mb-item" data-open-board="drone"><span>🚁</span><span>Drone</span></a>
-    <!-- <a href="#giai-thuong" class="mb-item"><span>🏆</span><span>Giải thưởng</span></a> -->
+    <a href="#giai-thuong" class="mb-item"><span>🏆</span><span>Giải thưởng</span></a>
     <a href="#dang-ky" class="mb-item cta-mini"><span>🔥</span><span>Đăng ký</span></a>
   </nav>
 
@@ -3355,7 +3354,7 @@
     </div>
   </div>
 
-  <!-- Hộp thoại Tiêu chí chấm Giải phụ - COMMENTED
+  <!-- Hộp thoại Tiêu chí chấm Giải phụ -->
   <div class="modal-backdrop" id="criteriaModal" role="dialog" aria-modal="true" aria-labelledby="criteriaModalTitle" hidden>
     <div class="glass-card modal-box">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px;">
@@ -3365,7 +3364,6 @@
       <div id="criteriaModalBody"></div>
     </div>
   </div>
-  -->
 
   <!-- Popup Đăng nhập Ban Tổ Chức (nhấn Logo FAnRoC trên header) -->
   <div class="modal-backdrop" id="btcLoginModal" role="dialog" aria-modal="true" aria-labelledby="btcModalTitle" hidden>
@@ -4610,7 +4608,7 @@
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           if (mediaLightbox.classList.contains("open")) closeMediaLightbox();
-          // else if (!document.getElementById("criteriaModal").hidden) closeCriteriaModal();
+          else if (!document.getElementById("criteriaModal").hidden) closeCriteriaModal();
           else if (boardDetailModal.classList.contains("open")) closeBoardModal();
         }
       });
@@ -4855,7 +4853,7 @@
       }
       renderRoadmap();
 
-      /* 9. Giải thưởng (#giai-thuong — Nền PRIZE_BG + Robotics/Drone Table + Giải phụ + Modal tiêu chí) - COMMENTED
+      // 9. Giải thưởng (#giai-thuong — Nền PRIZE_BG + Robotics/Drone Table + Giải phụ + Modal tiêu chí)
       const awardsShell = document.getElementById("awardsShell");
       const awardsBgImg = document.getElementById("awardsBgImg");
       awardsBgImg.src = PRIZE_BG_URL;
@@ -5026,7 +5024,6 @@
       });
 
       renderAwardsSection("robotics");
-      */
 
       // 12. 4 nguyên tắc lập đội + Copy Email
       document.getElementById("principlesGrid").innerHTML = CONTENT.principles.map((p) => `
